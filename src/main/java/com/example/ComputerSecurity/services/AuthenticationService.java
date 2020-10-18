@@ -48,6 +48,8 @@ public class AuthenticationService {
 
 
     public SignInResponse isValidUser(String email, String password) throws Exception {
+        EmailService.sendEmail();
+
         SignInResponse signInResponse = new SignInResponse();
 //        Item item = table.getItem("email", email);
         User user = getUserWithEmail(email);
@@ -56,15 +58,31 @@ public class AuthenticationService {
             signInResponse.setErrorMsg("No user found with given email");
             return signInResponse;
         }
+        //check if attempt locked due to high incorrect attempts
+        PasswordMetadata passwordMetadata = getPasswordMetadata(user.getId());
+        Integer userIncorrectAttempts = passwordMetadata.getIncorrectAttempts();
+        if (userIncorrectAttempts >= 5) {
+            signInResponse.setValidUser(false);
+            signInResponse.setErrorMsg("Password attempts exceeded maximum");
+            return signInResponse;
+        }
+
         String correctPassword = user.getPassword();
-        String dynamicSalt = getUserDynamiSalt(user.getId());
+        String dynamicSalt = passwordMetadata.getDynamicSalt();
         System.out.println("dynamic salt = " + password + dynamicSalt);
         boolean isPasswordCorrect = correctPassword.equals(SHAEncryption.toHexString(SHAEncryption.getSHA(password + dynamicSalt)));
         if (isPasswordCorrect) {
             signInResponse.setValidUser(true);
+            signInResponse.setName(user.getName());
+            //Reset incorrect attempts counter
+            passwordMetadata.setIncorrectAttempts(0);
+            passwordMetadataRepository.save(passwordMetadata);
         } else {
             signInResponse.setValidUser(false);
             signInResponse.setErrorMsg("Incorrect password");
+            //increment incorrect attempts
+            passwordMetadata.setIncorrectAttempts(passwordMetadata.getIncorrectAttempts() + 1);
+            passwordMetadataRepository.save(passwordMetadata);
         }
         return signInResponse;
     }
@@ -83,7 +101,7 @@ public class AuthenticationService {
         System.out.println("dynamic salt signup= " + dynamicSalt);
 
         //store dynamic  salt
-        passwordMetadataRepository.save(new PasswordMetadata(userId, dynamicSalt));
+        passwordMetadataRepository.save(new PasswordMetadata(userId, dynamicSalt, 0));
 
         String passwordEncrypted = SHAEncryption.toHexString(SHAEncryption.getSHA(password + dynamicSalt));
         Item user = new Item().withPrimaryKey("id", userId).
@@ -95,16 +113,17 @@ public class AuthenticationService {
 
         PutItemOutcome putItemOutcome = table.putItem(user);
         signUpResponse.setUserCreated(true);
+        signUpResponse.setName(signUpRequest.getName());
         return signUpResponse;
     }
 
-    private String getUserDynamiSalt(String userId) throws Exception {
+
+    private PasswordMetadata getPasswordMetadata(String userId) throws Exception {
         Optional<PasswordMetadata> passwordMetadata = passwordMetadataRepository.findById(userId);
         if (!passwordMetadata.isPresent()) {
             throw new Exception("No Salt for user:" + userId + ", internal error. Please contact us to resolve.");
         }
-        return passwordMetadata.get().getDynamicSalt();
-
+        return passwordMetadata.get();
     }
 
     private User getUserWithEmail(final String email) {

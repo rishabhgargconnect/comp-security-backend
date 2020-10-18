@@ -10,4 +10,5 @@ import lombok.*;
 public class SignInResponse {
     private boolean isValidUser;
     private String errorMsg;
+    private String name;
 }

@@ -21,5 +21,6 @@ public class PasswordMetadata {
     private String userId;
     @Column(name = "dynamic_salt")
     private String dynamicSalt;
-
+    @Column(name = "incorrect_attempts")
+    private Integer incorrectAttempts;
 }

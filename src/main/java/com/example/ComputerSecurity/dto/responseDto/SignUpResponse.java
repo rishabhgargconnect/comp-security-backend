@@ -11,4 +11,6 @@ public class SignUpResponse {
 
     private String errorMsg;
     private boolean userCreated;
+    private String name;
+
 }
