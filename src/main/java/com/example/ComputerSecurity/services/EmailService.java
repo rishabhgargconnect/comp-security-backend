@@ -7,7 +7,7 @@ import javax.mail.internet.*;
 import javax.activation.*;
 
 public class EmailService {
-    public static void sendEmail() {
+    public static void sendEmail(String recipientEmail) {
         final String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
         // Get a Properties object
         Properties props = System.getProperties();
@@ -36,14 +36,15 @@ public class EmailService {
             // -- Set the FROM and TO fields --
             msg.setFrom(new InternetAddress("rishabhgarg9818@gmail.com"));
             msg.setRecipients(Message.RecipientType.TO,
-                    InternetAddress.parse("rishabhgargconnect@gmail.com", false));
-            msg.setSubject("Hello");
-            msg.setText("How are you");
+                    InternetAddress.parse(recipientEmail, false));
+            msg.setSubject("Unauthorised access to your Secure-Shop account");
+            msg.setText("Seems like someone has been trying to repeatedly make password attempts to your account." +
+                    " We recommend you to change your password to strong if it wasn't you.");
             msg.setSentDate(new Date());
             Transport.send(msg);
             System.out.println("Message sent.");
         } catch (MessagingException e) {
-            System.out.println("Erreur d'envoi, cause: " + e);
+            System.out.println("Issue: " + e);
         }
     }
 }

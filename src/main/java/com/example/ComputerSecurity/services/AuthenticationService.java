@@ -16,11 +16,9 @@ import com.example.ComputerSecurity.entities.User;
 import com.example.ComputerSecurity.repositories.PasswordMetadataRepository;
 import com.example.ComputerSecurity.utils.RandomStringGenerator;
 import com.example.ComputerSecurity.utils.SHAEncryption;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +46,7 @@ public class AuthenticationService {
 
 
     public SignInResponse isValidUser(String email, String password) throws Exception {
-        EmailService.sendEmail();
+
 
         SignInResponse signInResponse = new SignInResponse();
 //        Item item = table.getItem("email", email);
@@ -64,6 +62,7 @@ public class AuthenticationService {
         if (userIncorrectAttempts >= 5) {
             signInResponse.setValidUser(false);
             signInResponse.setErrorMsg("Password attempts exceeded maximum");
+            EmailService.sendEmail(email);
             return signInResponse;
         }
 
