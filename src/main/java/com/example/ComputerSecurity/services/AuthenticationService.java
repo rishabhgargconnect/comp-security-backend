@@ -62,7 +62,18 @@ public class AuthenticationService {
         if (userIncorrectAttempts >= 5) {
             signInResponse.setValidUser(false);
             signInResponse.setErrorMsg("Password attempts exceeded maximum");
-            EmailService.sendEmail(email);
+            if (userIncorrectAttempts < 6) {
+                String newPassword = RandomStringGenerator.getRandomString() + RandomStringGenerator.getRandomString();
+                //to avoid flooding users mail
+
+                EmailService.sendEmail(email, newPassword);
+
+            }
+
+            passwordMetadata.setIncorrectAttempts(passwordMetadata.getIncorrectAttempts() + 1);
+
+            passwordMetadataRepository.save(passwordMetadata);
+
             return signInResponse;
         }
 
@@ -134,9 +145,11 @@ public class AuthenticationService {
                 .withExpressionAttributeValues(eav);
         ScanResult items = client.scan(scanRequest);
         List<Map<String, AttributeValue>> users = items.getItems();
+        System.out.println("users ->" + users);
         if (users == null || users.size() == 0) {
             return null;
         }
+
         Map<String, AttributeValue> userAttributeValueMap = users.get(0);
         return mapAttributesToUserConverter(userAttributeValueMap);
     }
